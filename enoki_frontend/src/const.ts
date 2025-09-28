@@ -11,3 +11,6 @@ export const DEFAULT_TREASURY_CAP_ID = '0xe4dcac083ce15e987b53f8c9677e3b675a37fc
 
 // USDC coin type on Sui testnet
 export const USDC_TYPE = '0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC';
+
+// Configuration API
+export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';

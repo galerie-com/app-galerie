@@ -207,7 +207,7 @@ export default function Portfolio() {
                 {formatUSDC(totalPortfolioValue)}$
               </div>
               
-              <h3 style={{ margin: "0 0 24px 0", fontSize: "18px", fontWeight: 600, color: "#111827", textAlign: "left", paddingLeft: "0" }}>
+              <h3 style={{ margin: "0 0 35px 0", fontSize: "18px", fontWeight: 600, color: "#111827", textAlign: "left", paddingLeft: "0" }}>
                 Portfolio Allocation
               </h3>
               {assets.length > 0 ? (

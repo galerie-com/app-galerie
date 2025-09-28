@@ -7,9 +7,7 @@ import { useSignTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { toBase64 } from "@mysten/sui/utils";
 import Sidebar from "../components/Sidebar";
 import { useQuery } from "@tanstack/react-query";
-import { TEMPLATE_PACKAGE, USDC_TYPE } from "../const.ts";
-
-const BACKEND_URL = "http://localhost:3001";
+import { TEMPLATE_PACKAGE, USDC_TYPE, BACKEND_URL } from "../const.ts";
 
 // (unused helper removed)
 
@@ -87,6 +85,8 @@ export default function Market() {
   const [buyAmount, setBuyAmount] = useState("1");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const suiClient = useSuiClient();
   const { mutateAsync: signTransaction } = useSignTransaction();
@@ -103,6 +103,15 @@ export default function Market() {
   }
 
   const formatInt = (n: bigint) => Number(n).toLocaleString('en-US');
+
+  // Toast notification function
+  const showToast = (message: string) => {
+    setSuccessMessage(message);
+    setShowSuccessToast(true);
+    setTimeout(() => {
+      setShowSuccessToast(false);
+    }, 4000);
+  };
 
   // Simple in-page routing: list vs product detail
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
@@ -342,7 +351,8 @@ export default function Market() {
         allowedAddresses: [currentAccount.address],
       });
 
-      // Purchase successful - no notification needed
+      // Purchase successful - show success toast
+      showToast(`Successfully purchased ${buyAmount} share${buyAmount !== '1' ? 's' : ''}!`);
       setBuyAmount("1");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Transaction failed");
@@ -568,19 +578,19 @@ export default function Market() {
                        <img src={product?.image} alt={product?.name || 'Asset'} style={{ width: "100%", height: "auto", objectFit: "cover", maxHeight: "650px" }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   </div>
                 </div>
-                <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 24, display: "flex", flexDirection: "column", gap: 20, overflow: "hidden", marginTop: "160px", marginLeft: "-60px" }}>
+                <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 20, display: "flex", flexDirection: "column", gap: 16, overflow: "hidden", marginTop: "160px", marginLeft: "-40px", maxWidth: "320px" }}>
                   <div>
                     <div style={{ fontSize: 14, color: "#6b7280" }}>Share Price</div>
                     <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4, color: "#111827" }}>{product ? `${formatUSDC(product.totalPrice / product.totalSupply)}$` : '-'}</div>
                   </div>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ flex: 1, padding: 12, border: '1px solid #e5e7eb', borderRadius: 8 }}>
-                      <div style={{ fontSize: 20, fontWeight: 600, color: "#1f2937" }}>{product ? formatInt(product.totalSupply) : '-'}</div>
-                      <div style={{ fontSize: 14, color: '#6b7280' }}>Total Shares</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
+                    <div style={{ flex: 'none', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, width: '110px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 600, color: "#1f2937", textAlign: 'center' }}>{product ? formatInt(product.totalSupply) : '-'}</div>
+                      <div style={{ fontSize: 12, color: '#6b7280', textAlign: 'center' }}>Total Shares</div>
                     </div>
-                    <div style={{ flex: 1, padding: 12, border: '1px solid #e5e7eb', borderRadius: 8 }}>
-                      <div style={{ fontSize: 20, fontWeight: 600, color: '#10b981' }}>{product ? formatInt((product as any).remaining) : '-'}</div>
-                      <div style={{ fontSize: 14, color: '#6b7280' }}>Available</div>
+                    <div style={{ flex: 'none', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, width: '110px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 600, color: '#10b981', textAlign: 'center' }}>{product ? formatInt((product as any).remaining) : '-'}</div>
+                      <div style={{ fontSize: 12, color: '#6b7280', textAlign: 'center' }}>Available</div>
                     </div>
                   </div>
                   <div>
@@ -597,76 +607,49 @@ export default function Market() {
                   </div>
                   <div style={{ borderTop: '1px solid #e5e7eb' }} />
                   <div>
-                    <div style={{ fontSize: 16, color: '#374151', fontWeight: 600, marginBottom: 12 }}>Number of shares</div>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-                      border: '2px solid #e2e8f0', 
-                      borderRadius: 20, 
-                      padding: '8px', 
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
-                      position: 'relative',
-                      overflow: 'hidden'
+                    <div style={{ fontSize: 16, color: '#374151', fontWeight: 600, marginBottom: 12, textAlign: 'center' }}>Number of shares</div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      background: '#ffffff',
+                      border: '1px solid #d1d5db',
+                      borderRadius: 6,
+                      padding: '8px 12px',
+                      width: '140px',
+                      height: '40px',
+                      margin: '0 auto'
                     }}>
-                      {/* Effet de lueur en arrière-plan */}
-                      <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'linear-gradient(90deg, transparent 0%, rgba(99, 102, 241, 0.05) 50%, transparent 100%)',
-                        animation: 'shimmer 3s ease-in-out infinite',
-                        pointerEvents: 'none'
-                      }} />
-                      
                       <button
                         onClick={() => handleBuyAmountChange(-1)}
                         style={{
-                          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                          background: 'transparent',
                           border: 'none',
-                          fontSize: 22,
+                          borderRadius: 3,
+                          fontSize: 14,
                           cursor: 'pointer',
-                          color: '#ffffff',
-                          width: 48,
-                          height: 48,
-                          borderRadius: 16,
+                          color: '#6b7280',
+                          width: 24,
+                          height: 24,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          fontWeight: 800,
-                          boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-                          outline: 'none',
-                          position: 'relative',
-                          zIndex: 1
+                          transition: 'all 0.2s ease',
+                          outline: 'none'
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)';
-                          e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
-                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(99, 102, 241, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                          e.currentTarget.style.background = '#f3f4f6';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-                          e.currentTarget.style.transform = 'scale(1) translateY(0px)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
-                        }}
-                        onMouseDown={(e) => {
-                          e.currentTarget.style.transform = 'scale(0.95) translateY(0px)';
-                        }}
-                        onMouseUp={(e) => {
-                          e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
+                          e.currentTarget.style.background = 'transparent';
                         }}
                       >−</button>
-                      
-                      <div style={{ 
-                        flex: 1, 
-                        display: 'flex', 
-                        alignItems: 'center', 
+
+                      <div style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
                         justifyContent: 'center',
-                        margin: '0 16px',
-                        position: 'relative'
+                        margin: '0 8px'
                       }}>
                         <input
                           type="text"
@@ -675,88 +658,64 @@ export default function Market() {
                           style={{
                             border: 'none',
                             textAlign: 'center',
-                            fontWeight: 900,
-                            fontSize: 24,
+                            fontWeight: 600,
+                            fontSize: 16,
                             width: '100%',
                             outline: 'none',
                             backgroundColor: 'transparent',
-                            color: '#1f2937',
-                            fontFamily: 'system-ui, -apple-system, sans-serif',
-                            letterSpacing: '0.5px'
+                            color: '#1f2937'
                           }}
                           placeholder="1"
                         />
-                        <div style={{
-                          position: 'absolute',
-                          bottom: '-2px',
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          width: '60%',
-                          height: '2px',
-                          background: 'linear-gradient(90deg, transparent 0%, #6366f1 50%, transparent 100%)',
-                          borderRadius: '1px'
-                        }} />
                       </div>
-                      
+
                       <button
                         onClick={() => handleBuyAmountChange(1)}
                         style={{
-                          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                          background: 'transparent',
                           border: 'none',
-                          fontSize: 22,
+                          borderRadius: 3,
+                          fontSize: 14,
                           cursor: 'pointer',
-                          color: '#ffffff',
-                          width: 48,
-                          height: 48,
-                          borderRadius: 16,
+                          color: '#6b7280',
+                          width: 24,
+                          height: 24,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          fontWeight: 800,
-                          boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-                          outline: 'none',
-                          position: 'relative',
-                          zIndex: 1
+                          transition: 'all 0.2s ease',
+                          outline: 'none'
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)';
-                          e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
-                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(99, 102, 241, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                          e.currentTarget.style.background = '#f3f4f6';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-                          e.currentTarget.style.transform = 'scale(1) translateY(0px)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
-                        }}
-                        onMouseDown={(e) => {
-                          e.currentTarget.style.transform = 'scale(0.95) translateY(0px)';
-                        }}
-                        onMouseUp={(e) => {
-                          e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
+                          e.currentTarget.style.background = 'transparent';
                         }}
                       >+</button>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <div style={{ fontSize: 14, color: '#6b7280' }}>Total:</div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: "#1f2937", marginLeft: 'auto' }}>{product ? `${formatUSDC((product.totalPrice / product.totalSupply) * BigInt(buyAmount || '0'))}$` : '-'}</div>
                   </div>
-                  <button 
-                    onClick={handleBuySelectedSale} 
-                    disabled={isLoading} 
-                    style={{ 
-                      width: '100%', 
-                      padding: "16px 20px", 
-                      borderRadius: 12, 
-                      border: "none", 
-                      background: "#6366f1", 
-                      color: "#ffffff", 
-                      fontWeight: 700, 
-                      cursor: isLoading ? "not-allowed" : "pointer", 
+                  <button
+                    onClick={handleBuySelectedSale}
+                    disabled={isLoading}
+                    style={{
+                      width: '200px',
+                      padding: "16px 20px",
+                      borderRadius: 12,
+                      border: "none",
+                      background: "#6366f1",
+                      color: "#ffffff",
+                      fontWeight: 700,
+                      cursor: isLoading ? "not-allowed" : "pointer",
                       fontSize: 16,
                       transition: 'all 0.2s ease',
-                      boxShadow: '0 4px 6px rgba(99, 102, 241, 0.25)'
+                      boxShadow: '0 4px 6px rgba(99, 102, 241, 0.25)',
+                      margin: '0 auto',
+                      display: 'block'
                     }}
                     onMouseEnter={(e) => {
                       if (!isLoading) {
@@ -782,6 +741,32 @@ export default function Market() {
           )}
         </main>
       </div>
+
+      {/* Success Toast Notification */}
+      {showSuccessToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          background: '#10b981',
+          color: 'white',
+          padding: '16px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+          zIndex: 1000,
+          fontSize: '14px',
+          fontWeight: 600,
+          maxWidth: '300px',
+          animation: 'slideInRight 0.3s ease-out'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="20,6 9,17 4,12"></polyline>
+            </svg>
+            {successMessage}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

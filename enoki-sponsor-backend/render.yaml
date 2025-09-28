@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: galerie-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    buildCommand: docker build -t galerie-backend .
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+    autoDeploy: false
+    healthCheckPath: /health

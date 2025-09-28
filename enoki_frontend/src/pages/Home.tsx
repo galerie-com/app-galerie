@@ -11,11 +11,9 @@ import contemporaryImage from "../assets/contemporary.jpeg";
 import investmentImage from "../assets/investment.jpeg";
 import streetArtImage from "../assets/streetart.jpeg";
 import { useQuery } from "@tanstack/react-query";
-import { TEMPLATE_PACKAGE } from "../const.ts";
+import { TEMPLATE_PACKAGE, BACKEND_URL, USDC_TYPE } from "../const.ts";
 
-const BACKEND_URL = "http://localhost:3001";
 const MONA_LISA_SALE_ID = "0xff119d7b7d56baca7e6bcc4a4291e6a3b713f0cd19bf064c4fff4661f98bc1ad";
-const USDC_TYPE = "0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC";
 
 async function getSuiCoin(
   tx: Transaction,
