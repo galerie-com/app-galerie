@@ -10,10 +10,11 @@ import Sidebar from "../components/Sidebar";
 import contemporaryImage from "../assets/contemporary.jpeg";
 import investmentImage from "../assets/investment.jpeg";
 import streetArtImage from "../assets/streetart.jpeg";
+import { useQuery } from "@tanstack/react-query";
+import { TEMPLATE_PACKAGE } from "../const.ts";
 
 const BACKEND_URL = "http://localhost:3001";
 const MONA_LISA_SALE_ID = "0xff119d7b7d56baca7e6bcc4a4291e6a3b713f0cd19bf064c4fff4661f98bc1ad";
-const TEMPLATE_PACKAGE = "0x940d379eda1e4080460be94e20cc79b4f073cc60334e395cee9b798aff6a071b";
 const USDC_TYPE = "0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC";
 
 async function getSuiCoin(
@@ -117,11 +118,32 @@ async function sponsorAndExecute({
   return true;
 }
 
+interface Asset {
+  id: string;
+  name: string;
+  image: string;
+  quantity: bigint;
+  purchasePrice: number;
+  currentPrice: number;
+  value: number;
+  allocation: number;
+  color: string;
+}
+
+const ASSET_COLORS = [
+  '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444',
+  '#6366f1', '#06b6d4', '#84cc16', '#f97316', '#ec4899'
+];
+
 export default function Home() {
   const currentAccount = useCurrentAccount();
   const [monaLisaShares, setMonaLisaShares] = useState("1");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState('1M');
+
+  const suiClient = useSuiClient();
+  const { mutateAsync: signTransaction } = useSignTransaction();
 
   const newsItems = [
     {
@@ -150,8 +172,106 @@ export default function Home() {
     },
   ];
 
-  const suiClient = useSuiClient();
-  const { mutateAsync: signTransaction } = useSignTransaction();
+  const formatUSDC = (amount: number) => {
+    return `${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  };
+
+  function parseSaleShareCoinType(saleType: string): string | null {
+    const m = saleType.match(/::template::Sale<(.+)>$/);
+    return m ? m[1] : null;
+  }
+
+  // Fetch user's portfolio assets
+  const { data: portfolioAssets } = useQuery({
+    queryKey: ["portfolio", currentAccount?.address],
+    enabled: !!currentAccount?.address,
+    queryFn: async () => {
+      if (!currentAccount?.address) return { assets: [], totalValue: 0 };
+
+      // Get all sales to match with user's holdings
+      const salesEvents = await suiClient.queryEvents({
+        query: { MoveEventType: `${TEMPLATE_PACKAGE}::template::SaleStarted` },
+        order: "descending",
+        limit: 100,
+      });
+
+      const saleIds = salesEvents.data.map((e: any) => e.parsedJson?.sale_id ?? e.parsedJson?.object_id).filter(Boolean);
+      const uniqueSaleIds = Array.from(new Set(saleIds));
+
+      if (uniqueSaleIds.length === 0) return { assets: [], totalValue: 0 };
+
+      const sales = await suiClient.multiGetObjects({
+        ids: uniqueSaleIds,
+        options: { showContent: true, showType: true }
+      });
+
+      const userAssets: Asset[] = [];
+      let totalValue = 0;
+
+      for (let i = 0; i < sales.length; i++) {
+        const sale = sales[i];
+        const fields: any = sale?.data?.content?.fields;
+        const saleType: string = sale?.data?.type || '';
+        const shareCoinType = parseSaleShareCoinType(saleType);
+
+        if (!shareCoinType) continue;
+
+        const nft = fields?.vault?.fields?.nft?.fields;
+        const totalSupply = BigInt(fields?.vault?.fields?.total_supply || 0);
+        const totalPrice = BigInt(fields?.vault?.fields?.total_price || 0);
+        const pricePerShare = Number(totalPrice) / Number(totalSupply) / 1_000_000; // Convert from USDC
+
+        try {
+          // Check if user has this asset
+          const userCoins = await suiClient.getCoins({
+            owner: currentAccount.address,
+            coinType: shareCoinType
+          });
+
+          if (userCoins.data.length > 0) {
+            const totalBalance = userCoins.data.reduce((sum, coin) => sum + BigInt(coin.balance), 0n);
+
+            if (totalBalance > 0n) {
+              let shareDecimals = 0;
+              try {
+                const meta = await suiClient.getCoinMetadata({ coinType: shareCoinType });
+                shareDecimals = meta?.decimals ?? 0;
+              } catch {}
+
+              const scale = 10n ** BigInt(shareDecimals || 0);
+              const actualShares = shareDecimals > 0 ? totalBalance / scale : totalBalance;
+              const assetValue = Number(actualShares) * pricePerShare;
+              totalValue += assetValue;
+
+              userAssets.push({
+                id: sale?.data?.objectId || '',
+                name: nft?.name || 'Unknown Asset',
+                image: nft?.image_url || 'https://via.placeholder.com/64x64?text=No+Image',
+                quantity: actualShares,
+                purchasePrice: pricePerShare,
+                currentPrice: pricePerShare,
+                value: assetValue,
+                allocation: 0, // Will be calculated after
+                color: ASSET_COLORS[i % ASSET_COLORS.length]
+              });
+            }
+          }
+        } catch (error) {
+          console.log(`Error checking asset ${nft?.name}:`, error);
+        }
+      }
+
+      // Calculate allocations
+      userAssets.forEach(asset => {
+        asset.allocation = totalValue > 0 ? (asset.value / totalValue) * 100 : 0;
+      });
+
+      return { assets: userAssets, totalValue };
+    },
+  });
+
+  const assets = portfolioAssets?.assets || [];
+  const totalPortfolioValue = portfolioAssets?.totalValue || 0;
 
   if (!currentAccount) {
     return (
@@ -382,28 +502,112 @@ export default function Home() {
               <section
                 style={{
                   width: "100%",
-                  minHeight: "560px",
+                  minHeight: "375px",
                   backgroundColor: "#ffffff",
                   border: "1px solid #e5e7eb",
-                borderRadius: "6px",
-                padding: "24px",
-                boxShadow: "0 10px 25px -16px rgba(15, 23, 42, 0.28)",
+                  borderRadius: "6px",
+                  padding: "24px",
+                  boxShadow: "0 10px 25px -16px rgba(15, 23, 42, 0.28)",
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "space-between",
-                  gap: "24px",
+                  gap: "16px",
                 }}
               >
-                <h2
-                  style={{
-                    margin: 0,
-                    fontSize: "1.5rem",
-                    fontWeight: 600,
-                    color: "#111827",
-                  }}
-                >
-                  Total Portfolio Value
-                </h2>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+                  <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 600, color: "#111827" }}>
+                    Total Portfolio Value
+                  </h2>
+
+                  <div style={{ display: "flex", backgroundColor: "#f3f4f6", borderRadius: "12px", padding: "4px" }}>
+                    {['1D', '1W', '1M', '1Y'].map((period) => (
+                      <button
+                        key={period}
+                        onClick={() => setSelectedPeriod(period)}
+                        style={{
+                          padding: "8px 16px",
+                          borderRadius: "8px",
+                          border: "none",
+                          background: selectedPeriod === period ? "#6366f1" : "transparent",
+                          color: selectedPeriod === period ? "#ffffff" : "#6b7280",
+                          fontWeight: selectedPeriod === period ? 600 : 500,
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          transition: "all 0.2s ease",
+                          outline: "none"
+                        }}
+                      >
+                        {period}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ fontSize: "48px", fontWeight: 800, color: "#111827", marginBottom: "24px", textAlign: "center" }}>
+                  {formatUSDC(totalPortfolioValue)}$
+                </div>
+
+                <h3 style={{ margin: "0 0 24px 0", fontSize: "20px", fontWeight: 600, color: "#111827", textAlign: "left", paddingLeft: "0" }}>
+                  Portfolio Allocation
+                </h3>
+
+                {assets.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    {/* Vertical Bar Chart */}
+                    <div style={{ display: "flex", alignItems: "end", justifyContent: "space-between", gap: "12px", height: "280px", padding: "0 8px" }}>
+                      {assets.sort((a, b) => b.allocation - a.allocation).map((asset, index) => (
+                        <div key={asset.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, maxWidth: "120px" }}>
+                          {/* Bar */}
+                          <div
+                            style={{
+                              width: "100%",
+                              height: `${Math.max(asset.allocation * 6, 30)}px`,
+                              backgroundColor: asset.color,
+                              borderRadius: "12px 12px 0 0",
+                              marginBottom: "16px",
+                              transition: "all 0.3s ease"
+                            }}
+                            title={`${asset.name}: ${asset.allocation.toFixed(1)}%`}
+                          />
+
+                          {/* Label */}
+                          <div style={{ textAlign: "center", width: "100%" }}>
+                            <div style={{
+                              fontSize: "13px",
+                              color: "#374151",
+                              fontWeight: 500,
+                              marginBottom: "6px",
+                              lineHeight: "1.3",
+                              height: "auto",
+                              overflow: "visible",
+                              whiteSpace: "normal",
+                              wordWrap: "break-word"
+                            }}>
+                              {(() => {
+                                const words = asset.name.split(' ');
+                                if (words.length <= 2) {
+                                  return asset.name;
+                                } else {
+                                  return words.slice(0, 2).join(' ') + '...';
+                                }
+                              })()}
+                            </div>
+                            <div style={{
+                              fontSize: "15px",
+                              color: "#111827",
+                              fontWeight: 700
+                            }}>
+                              {asset.allocation.toFixed(1)}%
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", color: "#6b7280", padding: "40px" }}>
+                    No assets found in your portfolio
+                  </div>
+                )}
               </section>
               <section
                 style={{
