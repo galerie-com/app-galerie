@@ -1,6 +1,6 @@
 # GALERIE - Enoki Sui zkLogin & Gas Sponsorship
 
-A web3 Sui application demonstrating Enoki's gas sponsorship and zkLogin authentication on the Sui blockchain.
+A web3 application for fractional asset tokenization on the Sui blockchain, demonstrating Enoki's seamless gas sponsorship and zkLogin authentication.
 
 ## How It Works
 
@@ -30,10 +30,8 @@ A web3 Sui application demonstrating Enoki's gas sponsorship and zkLogin authent
 - **Rate Limiting** and spending controls
 
 #### Smart Contracts
-- **Move Language** contracts on Sui blockchain
-- **Fractional NFT** ownership and trading mechanisms
-
-
+- **Move Language** contracts on the Sui blockchain, leveraging its secure, object-centric framework.
+- **Fractional NFT** tokenization and primary sale mechanisms.
 
 ## Quick Start
 
