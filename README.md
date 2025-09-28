@@ -1,54 +1,63 @@
-# Enoki Project README
+# GALERIE - Enoki Sui zkLogin & Gas Sponsorship
 
-This repository contains three main projects:
+A web3 Sui application demonstrating Enoki's gas sponsorship and zkLogin authentication on the Sui blockchain.
 
-* `enoki_frontend`: A React-based frontend application built using the Mysten Labs Dapp Kit.
-* `smart_contract`: A Move-based smart contract project.
-* `enoki-sponsor-backend`: A Node.js-based backend server for sponsoring transactions.
+## How It Works
 
-## Getting Started
+### 🔐 Enoki zkLogin Authentication
+- **Enoki zkLogin**: Integrated zkLogin authentication system from Mysten Labs
+- **OAuth Providers**: Users authenticate with Google, Facebook, or Twitch without exposing private keys
+- **Zero-Knowledge Proofs**: Leverages cryptographic proofs to maintain privacy while creating Sui wallet addresses
+- **Seamless Integration**: Enoki handles the complex zkLogin flow automatically
 
-### Enoki Frontend
+### ⛽ Gas Fee Sponsorship
+- **Enoki Sponsorship**: Backend service sponsors all transaction gas fees
+- **Seamless UX**: Users pay $0 in gas fees for all blockchain interactions
+- **Configurable Limits**: Set spending limits and allowed contract interactions per user
 
-The Enoki frontend is built using React and the Mysten Labs Dapp Kit. To get started, navigate to the `enoki_frontend` directory and run the following commands:
+### 🏗️ Architecture Components
 
+#### Frontend (`enoki_frontend/`)
+- **React + TypeScript** application using Mysten Dapp Kit
+- **zkLogin Integration** for wallet-less user authentication
+- **Real-time Portfolio** tracking with live price updates
+- **NFT Marketplace** for fractional ownership of digital assets
+
+#### Backend (`enoki-sponsor-backend/`)
+- **Node.js/Express** server handling transaction sponsorship
+- **Enoki SDK Integration** for gas fee management
+- **JWT Validation** for secure user session management
+- **Rate Limiting** and spending controls
+
+#### Smart Contracts
+- **Move Language** contracts on Sui blockchain
+- **Fractional NFT** ownership and trading mechanisms
+
+
+
+## Quick Start
+
+### Frontend
 ```bash
+cd enoki_frontend
 npm install
 npm run dev
 ```
 
-This will start the development server and you can access the application at `http://localhost:3000`.
-
-### Smart Contract
-
-The smart contract is built using Move and can be compiled and tested using the following commands:
-
+### Backend
 ```bash
-cd smart_contract
-```
-
-### Enoki Sponsor Backend
-
-The Enoki sponsor backend is built using Node.js and Express. To get started, navigate to the `enoki-sponsor-backend` directory and run the following commands:
-
-```bash
+cd enoki-sponsor-backend
 npm install
 npm run dev
 ```
 
-This will start the development server and you can access the API at `http://localhost:3001`.
+## Configuration
 
-## Useful Links
+1. **Enoki Setup**: Configure OAuth providers in Enoki Portal
+2. **Environment Variables**: Set up JWT secrets and Enoki credentials
+3. **Sponsorship Rules**: Define gas limits and allowed contracts
 
-* [Enoki Docs](https://docs.enoki.mystenlabs.com/)
-* [Google Cloud Console](https://console.cloud.google.com/)
-* [Enoki Portal](https://portal.enoki.mystenlabs.com/)
-* [Mysten Labs Dapp Kit](https://sdk.mystenlabs.com/dapp-kit)
-* [Enoki Tutorial Playlist](https://www.youtube.com/playlist?list=PLJm5g76LAUur4YzeloQBcPbO5QMutYiNN)
+## Resources
 
-## YouTube Playlist
-
-Watch the Enoki tutorial playlist here:
-
-[![YouTube Playlist](https://img.youtube.com/vi/4QpW4tqN1mA/0.jpg)](https://youtube.com/playlist?list=PLJm5g76LAUur4YzeloQBcPbO5QMutYiNN&si=nxJ5YzvQStWnA1gG)
-
+- [Enoki Documentation](https://docs.enoki.mystenlabs.com/)
+- [Sui Asset Tokenization](https://docs.sui.io/guides/developer/nft/asset-tokenization)
